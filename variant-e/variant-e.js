@@ -84,7 +84,7 @@ function addBenefitsSection() {
 function BenefitItem({ icon, text }) {
   return (
     <li className="cf:flex cf:items-start cf:gap-3">
-      <span className="cf:flex-shrink-0 cf:text-[#0098db] cf:font-bold cf:text-xl">
+      <span className="cf:flex-shrink-0 cf:text-black cf:font-bold cf:text-xl">
         {icon}
       </span>
       <span className="cf:text-black cf:text-base cf:leading-relaxed">
