@@ -40,16 +40,16 @@ const faqs = [
 function FAQItem({ question, answer, index }) {
   const itemId = `faq-item-${index}`;
   const contentId = `faq-content-${index}`;
-  
+
   return (
     <div className="cf:border-b cf:border-[#2c4143]/10 cf:last:border-b-0">
       <button
-        className="cf:w-full cf:text-left cf:py-6 cf:px-0 cf:flex cf:items-center cf:justify-between cf:gap-4 cf:transition-colors cf:duration-200 cf:hover:text-[#ed6835] cf:group"
+        className="cf:rounded-xl cf:w-full cf:text-left cf:py-3 cf:px-6 cf:flex cf:items-center cf:justify-between cf:gap-4 cf:transition-colors cf:duration-200 cf:hover:text-[#ed6835] cf:group"
         data-faq-button={itemId}
         aria-expanded="false"
         aria-controls={contentId}
       >
-        <h3 className="cf:text-xl cf:font-semibold cf:text-[#2c4143] cf:group-hover:text-[#ed6835] cf:transition-colors cf:duration-200" style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;">
+        <h3 className="cf:text-2xl cf:font-semibold cf:text-[#2c4143] cf:group-hover:text-[#ed6835] cf:transition-colors cf:duration-200" style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;">
           {question}
         </h3>
         <div className="cf:flex-shrink-0 cf:w-6 cf:h-6 cf:relative" data-faq-icon={itemId}>
@@ -67,7 +67,7 @@ function FAQItem({ question, answer, index }) {
         data-faq-content={itemId}
       >
         <div className="cf:pb-6 cf:pr-12">
-          <p className="cf:text-base cf:text-[#2c4143]/75 cf:leading-relaxed" style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;">
+          <p className="cf:text-xl cf:text-[#2c4143]/80 cf:leading-relaxed" style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;">
             {answer}
           </p>
         </div>
@@ -94,7 +94,7 @@ function FAQSection() {
         </div>
 
         {/* FAQ Accordion */}
-        <div className="cf:bg-white cf:rounded-2xl cf:shadow-sm cf:p-8">
+        <div className="cf:bg-white cf:rounded-2xl cf:shadow-sm cf:p-8 cf:flex cf:flex-col cf:gap-3">
           {faqs.map((faq, index) => (
             <FAQItem key={index} question={faq.question} answer={faq.answer} index={index} />
           ))}
@@ -105,8 +105,8 @@ function FAQSection() {
           <p className="cf:text-base cf:text-[#2c4143]/75 cf:mb-4" style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;">
             Still have questions? We're here to help!
           </p>
-          <a 
-            href="/pages/contact" 
+          <a
+            href="/pages/contact"
             className="cf:inline-block cf:bg-[#ed6835] cf:text-white cf:px-8 cf:py-3 cf:rounded-full cf:font-semibold cf:transition-all cf:duration-200 cf:hover:bg-[#d95a3a] cf:hover:shadow-lg cf:hover:scale-105 cf:text-base"
             style="font-family: 'Open Sans', sans-serif; letter-spacing: 0.6px;"
           >
@@ -120,8 +120,8 @@ function FAQSection() {
 
 // Wait for footer to be available and insert FAQ section before it
 function insertFAQSection() {
-  const footer = document.querySelector('#shopify-section-sections--24880839229761__footer');
-  
+  const footer = document.querySelector('#shopify-section-sections--25269131968833__footer');
+
   if (!footer) {
     console.error('Footer not found');
     return false;
@@ -144,30 +144,68 @@ function insertFAQSection() {
   return true;
 }
 
+// Use MutationObserver to wait for the footer
+function waitForFooterAndInsert() {
+  const footer = document.querySelector('#shopify-section-sections--25269131968833__footer');
+  
+  if (footer) {
+    if (insertFAQSection()) {
+      window.CFQ = window.CFQ || [];
+      window.CFQ.push({ emit: 'variantRendered' });
+      console.log('FAQ section inserted and variantRendered emitted');
+    }
+    return;
+  }
+
+  // If footer not found, observe for it
+  const observer = new MutationObserver((mutations, obs) => {
+    const footer = document.querySelector('#shopify-section-sections--25269131968833__footer');
+    if (footer) {
+      obs.disconnect();
+      if (insertFAQSection()) {
+        window.CFQ = window.CFQ || [];
+        window.CFQ.push({ emit: 'variantRendered' });
+        console.log('FAQ section inserted and variantRendered emitted');
+      }
+    }
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // Safety timeout after 10 seconds
+  setTimeout(() => {
+    observer.disconnect();
+    console.error('Timeout waiting for footer');
+  }, 10000);
+}
+
 // Setup accordion click handlers
 function setupAccordion() {
   const buttons = document.querySelectorAll('[data-faq-button]');
-  
+
   buttons.forEach((button) => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
       const itemId = this.getAttribute('data-faq-button');
       const content = document.querySelector(`[data-faq-content="${itemId}"]`);
       const icon = document.querySelector(`[data-faq-icon="${itemId}"] svg`);
       const isExpanded = this.getAttribute('aria-expanded') === 'true';
-      
+
       // Close all other items
       buttons.forEach(otherButton => {
         if (otherButton !== this) {
           const otherItemId = otherButton.getAttribute('data-faq-button');
           const otherContent = document.querySelector(`[data-faq-content="${otherItemId}"]`);
           const otherIcon = document.querySelector(`[data-faq-icon="${otherItemId}"] svg`);
-          
+
           otherButton.setAttribute('aria-expanded', 'false');
           otherContent.style.maxHeight = '0';
           otherIcon.style.transform = 'rotate(0deg)';
         }
       });
-      
+
       // Toggle current item
       if (isExpanded) {
         this.setAttribute('aria-expanded', 'false');
@@ -185,17 +223,9 @@ function setupAccordion() {
 // Run the insertion
 try {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (insertFAQSection()) {
-        window.CFQ = window.CFQ || [];
-        window.CFQ.push({ emit: 'variantRendered' });
-      }
-    });
+    document.addEventListener('DOMContentLoaded', waitForFooterAndInsert);
   } else {
-    if (insertFAQSection()) {
-      window.CFQ = window.CFQ || [];
-      window.CFQ.push({ emit: 'variantRendered' });
-    }
+    waitForFooterAndInsert();
   }
 } catch (error) {
   console.error('Error inserting FAQ section:', error);
